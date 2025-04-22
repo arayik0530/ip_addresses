@@ -1,39 +1,53 @@
 package com.example.ip_counter;
 
-import java.util.BitSet;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicLongArray;
 
 /**
- * Efficient IPv4 address counter using dual BitSet.
+ * Lock-free IPv4 address counter using atomic operations.
  */
 public final class IpAddrCounter {
 
-    private final BitSet lower = new BitSet(); // 0 to Integer.MAX_VALUE - 1
-    private BitSet upper = null;               // Integer.MAX_VALUE to 2^32 - 1
-    private long uniqueCount = 0;
+    private static final int BITSET_SIZE = (int) (Integer.MAX_VALUE / 64L + 1);
+
+    private final AtomicLongArray lower = new AtomicLongArray(BITSET_SIZE);
+    private final AtomicLongArray upper = new AtomicLongArray(BITSET_SIZE);
+    private final AtomicLong uniqueCount = new AtomicLong(0);
 
     public void add(String ip) {
         long ipValue = parseIp(ip);
+        boolean updated = false;
 
-        if (ipValue < Integer.MAX_VALUE) {
-            int index = (int) ipValue;
-            if (!lower.get(index)) {
-                lower.set(index);
-                uniqueCount++;
-            }
+        if (ipValue <= Integer.MAX_VALUE) {
+            updated = trySetBit(lower, ipValue);
         } else {
-            if (upper == null) {
-                upper = new BitSet();
-            }
-            int index = (int) (ipValue - Integer.MAX_VALUE);
-            if (!upper.get(index)) {
-                upper.set(index);
-                uniqueCount++;
-            }
+            long upperIndex = ipValue - (long) Integer.MAX_VALUE - 1;
+            updated = trySetBit(upper, upperIndex);
+        }
+
+        if (updated) {
+            uniqueCount.incrementAndGet();
         }
     }
 
     public long count() {
-        return uniqueCount;
+        return uniqueCount.get();
+    }
+
+    private boolean trySetBit(AtomicLongArray bitset, long bitIndex) {
+        int longIndex = (int) (bitIndex / 64);
+        long mask = 1L << (bitIndex % 64);
+
+        while (true) {
+            long current = bitset.get(longIndex);
+            if ((current & mask) != 0) {
+                return false; // already set
+            }
+            long updated = current | mask;
+            if (bitset.compareAndSet(longIndex, current, updated)) {
+                return true;
+            }
+        }
     }
 
     private long parseIp(String ip) {
@@ -44,22 +58,12 @@ public final class IpAddrCounter {
 
         long result = 0;
         for (int i = 0; i < 4; i++) {
-            String part = parts[i];
-            int octet;
-
-            try {
-                octet = Integer.parseInt(part);
-            } catch (NumberFormatException e) {
-                throw new IllegalArgumentException("Non-numeric IP segment [" + part + "]");
-            }
-
+            int octet = Integer.parseInt(parts[i]);
             if (octet < 0 || octet > 255) {
-                throw new IllegalArgumentException("Invalid IP segment [" + part + "]");
+                throw new IllegalArgumentException("Invalid IP segment [" + parts[i] + "]");
             }
-
-            result = result * 256 + octet;
+            result = (result << 8) + octet;
         }
-
         return result;
     }
 }

@@ -10,15 +10,15 @@ import java.time.Instant;
 /**
  * Application entry point.
  * Author: Ara Gevorgyan
- * Created on: 4/22/25
+ * Created on: 4/19/25
  */
-public class Application {
+public final class Application {
 
     private static final String DEFAULT_FILE_PATH = "/home/aragevorgyan/Downloads/ip_addresses.zip";
 
     public static void main(String[] args) {
         Path inputPath = Path.of(DEFAULT_FILE_PATH);
-        IpReader reader = new ZipIpReader(); // You can swap to PlainTextIpReader if needed
+        IpReader reader = new ZipIpReader();
 
         IpAddrCounter counter = new IpAddrCounter();
 

@@ -11,10 +11,10 @@ import java.nio.file.Path;
 public class IpAddrCounterTest {
     public static void main(String[] args) {
         String plainTextFilePath = "src/com/example/ip_counter/simple_test/sample-ips.txt";
-//        String zipFilePath = "src/com/example/ip_counter/simple_test/sample-ips.zip";
+        String zipFilePath = "src/com/example/ip_counter/simple_test/sample-ips.zip";
 
         testIpCountReader(plainTextFilePath, new PlainTextIpReader());
-//        testIpCountReader(zipFilePath, new ZipIpReader());
+        testIpCountReader(zipFilePath, new ZipIpReader());
     }
 
     private static void testIpCountReader(String filePath, IpReader reader) {
