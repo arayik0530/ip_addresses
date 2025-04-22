@@ -26,7 +26,6 @@ public final class PlainTextIpReader implements IpReader {
                     try {
                         counter.add(trimmed);
                     } catch (IllegalArgumentException e) {
-                        // Optional: log invalid lines
                     }
                 }
             }

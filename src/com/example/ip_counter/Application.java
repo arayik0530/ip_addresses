@@ -1,7 +1,7 @@
 package com.example.ip_counter;
 
 import com.example.ip_counter.reader.IpReader;
-import com.example.ip_counter.reader.ZipIpReader;
+import com.example.ip_counter.reader.ReaderFactory;
 
 import java.nio.file.Path;
 import java.time.Duration;
@@ -10,15 +10,16 @@ import java.time.Instant;
 /**
  * Application entry point.
  * Author: Ara Gevorgyan
- * Created on: 4/19/25
+ * Created on: 4/22/25
  */
 public final class Application {
 
-    private static final String DEFAULT_FILE_PATH = "/home/aragevorgyan/Downloads/ip_addresses.zip";
+    //    private static final String DEFAULT_FILE_PATH = "/home/aragevorgyan/Downloads/ip_addresses.zip";
+    private static final String DEFAULT_FILE_PATH = "/home/aragevorgyan/Downloads/ip_addresses.txt";
 
     public static void main(String[] args) {
         Path inputPath = Path.of(DEFAULT_FILE_PATH);
-        IpReader reader = new ZipIpReader();
+        IpReader reader = ReaderFactory.getReader(inputPath);
 
         IpAddrCounter counter = new IpAddrCounter();
 

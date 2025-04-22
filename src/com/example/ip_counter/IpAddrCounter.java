@@ -8,7 +8,7 @@ import java.util.concurrent.atomic.AtomicLongArray;
  */
 public final class IpAddrCounter {
 
-    private static final int BITSET_SIZE = (int) (Integer.MAX_VALUE / 64L + 1);
+    private static final int BITSET_SIZE = (int) (Integer.MAX_VALUE / 64L + 1); // each long holds 64 bits
 
     private final AtomicLongArray lower = new AtomicLongArray(BITSET_SIZE);
     private final AtomicLongArray upper = new AtomicLongArray(BITSET_SIZE);

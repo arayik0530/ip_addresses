@@ -2,15 +2,12 @@ package com.example.ip_counter.reader;
 
 import com.example.ip_counter.IpAddrCounter;
 
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
-import java.nio.charset.CharsetDecoder;
-import java.nio.charset.CodingErrorAction;
-import java.nio.charset.StandardCharsets;
+import java.nio.charset.*;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -23,7 +20,7 @@ import java.util.zip.ZipFile;
  */
 public final class ZipIpReader implements IpReader {
 
-    private static final int BUFFER_SIZE = 16 * 1024 * 1024; // 16MB per read
+    private static final int BUFFER_SIZE = 16 * 1024 * 1024;
     private static final int THREAD_COUNT = Runtime.getRuntime().availableProcessors();
 
     @Override
@@ -36,7 +33,7 @@ public final class ZipIpReader implements IpReader {
         List<Future<?>> futures = new ArrayList<>();
 
         try (ZipFile zipFile = new ZipFile(zipPath.toFile(), StandardCharsets.UTF_8)) {
-            ZipEntry entry = zipFile.entries().nextElement(); // assumes only one file
+            ZipEntry entry = zipFile.entries().nextElement();
             try (InputStream inputStream = zipFile.getInputStream(entry);
                  ReadableByteChannel channel = Channels.newChannel(inputStream)) {
 
@@ -56,7 +53,6 @@ public final class ZipIpReader implements IpReader {
                     processChunkAsLines(leftover, counter, executor, futures);
                 }
 
-                // Process any final leftover line
                 if (leftover.length() > 0) {
                     String last = leftover.toString().trim();
                     if (!last.isBlank()) {
@@ -72,7 +68,7 @@ public final class ZipIpReader implements IpReader {
                 }
                 for (Future<?> f : futures) {
                     try {
-                        f.get(); // rethrow exceptions if any
+                        f.get();
                     } catch (InterruptedException e) {
                         throw new RuntimeException(e);
                     }
@@ -108,7 +104,6 @@ public final class ZipIpReader implements IpReader {
             }
         }
 
-        // Keep remaining characters for next read
         if (start < length) {
             chunkBuilder.delete(0, start);
         } else {
@@ -126,7 +121,6 @@ public final class ZipIpReader implements IpReader {
             try {
                 counter.add(line);
             } catch (IllegalArgumentException ignored) {
-                // optionally log invalid IPs
             }
         }
     }
