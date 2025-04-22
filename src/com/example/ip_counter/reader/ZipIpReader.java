@@ -2,38 +2,51 @@ package com.example.ip_counter.reader;
 
 import com.example.ip_counter.IpAddrCounter;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
-import java.nio.charset.*;
+import java.nio.charset.CharsetDecoder;
+import java.nio.charset.CodingErrorAction;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.List;
-import java.util.concurrent.*;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 /**
- * High-performance ZIP reader for a single large text file using NIO & parallel line processing.
+ * High-performance ZIP reader for a single large text file using NIO & virtual threads.
  */
 public final class ZipIpReader implements IpReader {
 
-    private static final int BUFFER_SIZE = 16 * 1024 * 1024;
-    private static final int THREAD_COUNT = Runtime.getRuntime().availableProcessors();
+    private static final int BUFFER_SIZE = 16 * 1024 * 1024; // 16 MB buffer
+    private static final int BATCH_SIZE = 10_000;
 
     @Override
     public void read(Path zipPath, IpAddrCounter counter) throws IOException {
         if (zipPath == null || !zipPath.toFile().exists() || !zipPath.toString().endsWith(".zip")) {
-            throw new IllegalArgumentException("ZIP file not found or invalid: " + zipPath);
+            throw new IllegalArgumentException(STR."ZIP file not found or invalid: \{zipPath}");
         }
 
-        ExecutorService executor = Executors.newFixedThreadPool(THREAD_COUNT);
-        List<Future<?>> futures = new ArrayList<>();
+        try (ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
+             ZipFile zipFile = new ZipFile(zipPath.toFile(), StandardCharsets.UTF_8)) {
 
-        try (ZipFile zipFile = new ZipFile(zipPath.toFile(), StandardCharsets.UTF_8)) {
-            ZipEntry entry = zipFile.entries().nextElement();
+            Enumeration<? extends ZipEntry> entries = zipFile.entries();
+            if (!entries.hasMoreElements()) {
+                throw new IOException("ZIP file is empty");
+            }
+
+            ZipEntry entry = entries.nextElement(); // assumes only one file
+            List<Future<?>> futures = new ArrayList<>();
+
             try (InputStream inputStream = zipFile.getInputStream(entry);
                  ReadableByteChannel channel = Channels.newChannel(inputStream)) {
 
@@ -53,39 +66,33 @@ public final class ZipIpReader implements IpReader {
                     processChunkAsLines(leftover, counter, executor, futures);
                 }
 
-                if (leftover.length() > 0) {
+                // Handle final leftover content
+                if (!leftover.isEmpty()) {
                     String last = leftover.toString().trim();
                     if (!last.isBlank()) {
-                        futures.add(executor.submit(() -> counter.add(last)));
+                        futures.add(executor.submit(() -> processLines(List.of(last), counter)));
                     }
                 }
 
-                executor.shutdown();
-                try {
-                    executor.awaitTermination(1, TimeUnit.HOURS);
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
+                // Wait for all submitted tasks
                 for (Future<?> f : futures) {
                     try {
                         f.get();
-                    } catch (InterruptedException e) {
-                        throw new RuntimeException(e);
+                    } catch (InterruptedException | ExecutionException e) {
+                        throw new IOException("Error while processing lines in parallel", e);
                     }
                 }
 
-            } catch (ExecutionException e) {
-                throw new IOException("Error while processing lines in parallel", e.getCause());
             }
         }
     }
 
     private void processChunkAsLines(StringBuilder chunkBuilder, IpAddrCounter counter,
                                      ExecutorService executor, List<Future<?>> futures) {
+
         int start = 0;
         int length = chunkBuilder.length();
-
-        List<String> batch = new ArrayList<>(10_000);
+        List<String> batch = new ArrayList<>(BATCH_SIZE);
 
         for (int i = 0; i < length; i++) {
             if (chunkBuilder.charAt(i) == '\n') {
@@ -94,7 +101,7 @@ public final class ZipIpReader implements IpReader {
                     batch.add(line);
                 }
 
-                if (batch.size() >= 10_000) {
+                if (batch.size() >= BATCH_SIZE) {
                     List<String> finalBatch = new ArrayList<>(batch);
                     futures.add(executor.submit(() -> processLines(finalBatch, counter)));
                     batch.clear();

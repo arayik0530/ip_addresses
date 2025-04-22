@@ -14,8 +14,8 @@ import java.time.Instant;
  */
 public final class Application {
 
-    //    private static final String DEFAULT_FILE_PATH = "/home/aragevorgyan/Downloads/ip_addresses.zip";
-    private static final String DEFAULT_FILE_PATH = "/home/aragevorgyan/Downloads/ip_addresses.txt";
+    private static final String DEFAULT_FILE_PATH = "/home/aragevorgyan/Downloads/ip_addresses.zip";
+//    private static final String DEFAULT_FILE_PATH = "/home/aragevorgyan/Downloads/ip_addresses.txt";
 
     public static void main(String[] args) {
         Path inputPath = Path.of(DEFAULT_FILE_PATH);
@@ -23,13 +23,13 @@ public final class Application {
 
         IpAddrCounter counter = new IpAddrCounter();
 
-        System.out.println("Reading from: " + inputPath);
+        System.out.println(STR."Reading from: \{inputPath}");
 
         Instant start = Instant.now();
         try {
             reader.read(inputPath, counter);
         } catch (Exception e) {
-            System.err.println("❌ Error while reading IPs: " + e.getMessage());
+            System.err.println(STR."❌ Error while reading IPs: \{e.getMessage()}");
             return;
         }
         Instant end = Instant.now();
