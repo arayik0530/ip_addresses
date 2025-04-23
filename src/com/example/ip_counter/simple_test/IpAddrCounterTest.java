@@ -1,7 +1,7 @@
 package com.example.ip_counter.simple_test;
 
-import com.example.ip_counter.IpCounter;
-import com.example.ip_counter.Ipv4AddressCounter;
+import com.example.ip_counter.counter.IpCounter;
+import com.example.ip_counter.counter.Ipv4AddressCounter;
 import com.example.ip_counter.reader.IpReader;
 import com.example.ip_counter.reader.TxtIpReader;
 import com.example.ip_counter.reader.ZipIpReader;

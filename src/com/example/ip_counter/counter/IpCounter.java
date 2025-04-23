@@ -1,4 +1,4 @@
-package com.example.ip_counter;
+package com.example.ip_counter.counter;
 
 /**
  * Counts unique IPv4 addresses.

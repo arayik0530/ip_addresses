@@ -1,5 +1,7 @@
 package com.example.ip_counter;
 
+import com.example.ip_counter.counter.IpCounter;
+import com.example.ip_counter.counter.Ipv4AddressCounter;
 import com.example.ip_counter.reader.IpReader;
 import com.example.ip_counter.reader.ReaderFactory;
 
@@ -14,8 +16,8 @@ import java.time.Instant;
  */
 public final class Application {
 
-    private static final String DEFAULT_FILE_PATH = "/home/aragevorgyan/Downloads/ip_addresses.txt";
-//    private static final String DEFAULT_FILE_PATH = "/home/aragevorgyan/Downloads/ip_addresses.zip";
+    //    private static final String DEFAULT_FILE_PATH = "/home/aragevorgyan/Downloads/ip_addresses.txt";
+    private static final String DEFAULT_FILE_PATH = "/home/aragevorgyan/Downloads/ip_addresses.zip";
 
     public static void main(String[] args) {
         Path inputPath = Path.of(DEFAULT_FILE_PATH);

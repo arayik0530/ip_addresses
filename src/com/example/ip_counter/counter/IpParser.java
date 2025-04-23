@@ -1,4 +1,4 @@
-package com.example.ip_counter;
+package com.example.ip_counter.counter;
 
 /**
  * Utility to parse dotted‑decimal IPv4 strings to unsigned 32‑bit values.

@@ -1,6 +1,6 @@
 package com.example.ip_counter.reader;
 
-import com.example.ip_counter.IpCounter;
+import com.example.ip_counter.counter.IpCounter;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
